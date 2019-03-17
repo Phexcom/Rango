@@ -108,3 +108,5 @@ venv.bak/
 '*.pyc'
 =======
 >>>>>>> 880e53a2fce9153f3fca9aa07dc41babd6b82814
+
+/rango/migrations/
