@@ -1,10 +1,12 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from rango.models import Category, Page
+from rango.forms import CategoryForm
+from rango.forms import PageForm
 
 
 def index(request):
-    category_list = Category.objects.order_by('-likes')[:5]
+    category_list = Category.objects.order_by('-views')[:3]
     context_dict = {'categories': category_list}
 
     return render(request, 'rango/index.html', context=context_dict)
@@ -49,3 +51,47 @@ def show_category(request, category_name_slug):
     # Go render the response and return it to the client.
     return render(request, 'rango/category.html', context_dict)
 
+
+def add_category(request):
+    form = CategoryForm()
+
+    # A HTTP POST?
+    if request.method == 'POST':
+        form = CategoryForm(request.POST)
+
+        # Have we been provided with a valid form?
+        if form.is_valid():
+            # save the new category to the database
+            form.save(commit=True)
+
+            # Now that the category is saved
+            # we could give a confirmation message
+            # But since the most recent category added is on the index page
+            # Them we can direct the user to the index page
+            return index(request)
+        else:
+            print(form.errors)
+    return render(request, 'rango/add_category.html', {'form': form})
+
+
+def add_page(request):
+    try:
+        category = Category.objects.get(slug=category_name_slug)
+    except Category.DoesNotExist:
+        category = None
+
+    form = PageForm()
+
+    if request.method == 'POST':
+        form = PageForm(request.POST)
+        if form.is_valid():
+            if category:
+                page = form.save(commit=False)
+                page.category = category
+                page.views = 0
+                page.save()
+                return show_category(request, category_name_slug)
+        else:
+            print(form.errors)
+    context_dict = {'form': form, 'category': category}
+    return render(request, 'rango/add_page.html', context_dict)
